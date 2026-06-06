@@ -1,5 +1,6 @@
 import streamlit as st
 import uuid
+from pathlib import Path
 from src.parser import parse_file
 from src.chunker import chunk_text
 from src.embedder import embed_chunks
@@ -7,14 +8,20 @@ from src.vectorstore import get_client, get_or_create_collection, store_chunks, 
 from src.retriever import retrieve_chunks
 from src.generator import generate_answer
 
-# Page config 
+def load_css(path: str):
+    with open(path) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Page config
 st.set_page_config(
     page_title="StudyDesk",
     page_icon="📚",
     layout="centered"
 )
 
-# Session state init 
+load_css("assets/style.css")
+
+# Session state init
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -33,69 +40,90 @@ if "messages" not in st.session_state:
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
 
-# UI
-st.title("📚 StudyDesk")
-st.caption("Upload your documents and ask anything about them.")
+# Header
+st.markdown("""
+    <div class="app-header">
+        <div class="app-title">StudyDesk</div>
+        <div class="app-subtitle">Upload your documents and ask anything about them</div>
+    </div>
+""", unsafe_allow_html=True)
 
 # File upload
+st.markdown('<div class="upload-label">Documents</div>', unsafe_allow_html=True)
+
 uploaded_file = st.file_uploader(
-    "Upload a PDF or TXT file",
+    "Upload a PDF or TXT file — max 10MB",
     type=["pdf", "txt"],
-    accept_multiple_files=False
+    accept_multiple_files=False,
+    label_visibility="collapsed"
 )
 
 if uploaded_file is not None:
-    if uploaded_file.name not in st.session_state.uploaded_files:
-        with st.spinner(f"Processing {uploaded_file.name}..."):
-            file_bytes = uploaded_file.read()
+    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
 
-            # Parse
+    if file_size_mb > 10:
+        st.error("This file exceeds the 10MB limit. Please upload a smaller file.")
+    elif uploaded_file.name not in st.session_state.uploaded_files:
+        with st.spinner(f"Indexing {uploaded_file.name}..."):
+            file_bytes = uploaded_file.read()
             success, result = parse_file(uploaded_file.name, file_bytes)
 
             if not success:
                 st.error(result)
             else:
-                # Chunk
                 chunks = chunk_text(result)
-
-                # Embed
                 embeddings = embed_chunks(chunks)
-
-                # Store
                 store_chunks(
                     st.session_state.collection,
                     chunks,
                     embeddings,
                     uploaded_file.name
                 )
-
                 st.session_state.uploaded_files.append(uploaded_file.name)
-                st.success(f"✅ {uploaded_file.name} indexed — {len(chunks)} chunks")
+                st.success(f"Indexed {len(chunks)} chunks from {uploaded_file.name}")
 
-# Show uploaded files
 if st.session_state.uploaded_files:
-    st.info("📄 Uploaded: " + ", ".join(st.session_state.uploaded_files))
+    pills_html = "".join([
+        f'<span class="file-pill">{f}</span>'
+        for f in st.session_state.uploaded_files
+    ])
+    st.markdown(f'<div style="margin: 0.5rem 0 1.5rem 0">{pills_html}</div>',
+                unsafe_allow_html=True)
 
 st.divider()
+
+# Empty states
+if not st.session_state.messages and not st.session_state.uploaded_files:
+    st.markdown("""
+        <div class="empty-state">
+            <div class="empty-state-icon">📖</div>
+            <div class="empty-state-text">Upload a document above to get started</div>
+        </div>
+    """, unsafe_allow_html=True)
+elif not st.session_state.messages and st.session_state.uploaded_files:
+    st.markdown("""
+        <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <div class="empty-state-text">Document ready — ask your first question below</div>
+        </div>
+    """, unsafe_allow_html=True)
 
 # Chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input 
+# Chat input
 query = st.chat_input("Ask something about your documents...")
 
 if query:
     if not st.session_state.uploaded_files:
-        st.warning("Please upload a document first.")
+        st.warning("Upload a document first before asking questions.")
     else:
-        # Show user message
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
             st.markdown(query)
 
-        # Retrieve and generate
         with st.chat_message("assistant"):
             chunks = retrieve_chunks(st.session_state.collection, query)
 
