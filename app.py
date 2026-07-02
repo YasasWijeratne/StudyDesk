@@ -32,7 +32,6 @@ def safe_error(message: str = "Something went wrong. Please try again."):
 load_css("assets/style.css")
 
 
-# 
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -55,8 +54,9 @@ if "uploaded_files" not in st.session_state:
 with st.sidebar:
     st.markdown("## StudyDesk")
 
-    if st.button("➕ New Chat"):
+    if st.button("New Chat"):
         st.session_state.messages = []
+        st.session_state.uploaded_files = []
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.collection = get_or_create_collection(
             st.session_state.chroma_client,
@@ -99,19 +99,20 @@ with st.sidebar:
 
                         st.session_state.uploaded_files.append(safe_name)
 
-                        st.success("File indexed successfully")
+                        st.success("Document indexed successfully.")
 
-                    except ValueError:
-                        safe_error("Failed to process document.")
                     except Exception:
-                        safe_error("Unexpected error during indexing.")
+                        safe_error(
+                            "Unable to process the uploaded document."
+                        )
 
     st.divider()
 
     if st.session_state.uploaded_files:
         st.markdown("### Uploaded Files")
-        for f in st.session_state.uploaded_files:
-            st.markdown(f" {f}")
+
+        for file in st.session_state.uploaded_files:
+            st.markdown(file)
 
 
 st.markdown(
@@ -124,9 +125,9 @@ st.markdown(
 )
 
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
 
 query = st.chat_input("Ask something about your documents...")
@@ -135,9 +136,13 @@ query = st.chat_input("Ask something about your documents...")
 if query:
     if not st.session_state.uploaded_files:
         st.warning("Please upload a document first.")
+
     else:
         st.session_state.messages.append(
-            {"role": "user", "content": query}
+            {
+                "role": "user",
+                "content": query
+            }
         )
 
         with st.chat_message("user"):
@@ -151,7 +156,9 @@ if query:
                 )
 
                 if not chunks:
-                    response = "I couldn't find relevant information in your documents."
+                    response = (
+                        "I couldn't find relevant information in your uploaded documents."
+                    )
                     st.markdown(response)
 
                 else:
@@ -159,14 +166,15 @@ if query:
                         generate_answer(query, chunks)
                     )
 
-            except ValueError:
-                response = "Something went wrong while processing your request."
-                safe_error(response)
-
             except Exception:
-                response = "Unexpected error occurred. Please try again."
+                response = (
+                    "Sorry, I couldn't generate a response. Please try again."
+                )
                 safe_error(response)
 
         st.session_state.messages.append(
-            {"role": "assistant", "content": response}
+            {
+                "role": "assistant",
+                "content": response
+            }
         )
