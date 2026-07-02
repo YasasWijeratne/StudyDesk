@@ -74,5 +74,5 @@ StudyDesk/
 ## Notes
 
 - Max file size is 10MB
-- Supported formats: PDF and TXT
+- Supported formats: PDF
 - Documents are stored in memory only — nothing persists after the session ends

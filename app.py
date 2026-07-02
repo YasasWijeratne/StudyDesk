@@ -153,6 +153,7 @@ if query:
                 if not chunks:
                     response = "I couldn't find relevant information in your documents."
                     st.markdown(response)
+
                 else:
                     response = st.write_stream(
                         generate_answer(query, chunks)
