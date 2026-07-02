@@ -1,92 +1,85 @@
-
 html, body, [class*="css"] {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    background-color: #0b0f19;
+    color: #e5e7eb;
 }
 
+/* MAIN LAYOUT */
 .main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    max-width: 780px;
+    max-width: 100%;
+    padding: 0;
 }
 
-/* Header */
-.app-header {
-    text-align: center;
-    padding: 1.5rem 0 1.25rem 0;
-    border-bottom: 1px solid #1a2a4a;
-    margin-bottom: 1.75rem;
+/* SIDEBAR */
+section[data-testid="stSidebar"] {
+    background-color: #0a0f1a;
+    border-right: 1px solid #1f2937;
 }
 
-.app-title {
-    font-size: 2rem;
+/* SIDEBAR TITLE */
+section[data-testid="stSidebar"] h2 {
+    font-size: 1.2rem;
     font-weight: 700;
-    color: #e2e8f0;
-    letter-spacing: -0.03em;
-    margin: 0;
 }
 
-.app-subtitle {
-    font-size: 0.88rem;
-    color: #4a6080;
-    margin-top: 0.35rem;
-    font-weight: 400;
+/* BUTTON */
+.stButton button {
+    width: 100%;
+    background-color: #111827;
+    color: white;
+    border: 1px solid #1f2937;
+    border-radius: 8px;
 }
 
-/* Upload label */
-.upload-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: #4a6080;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.5rem;
+.stButton button:hover {
+    background-color: #1f2937;
 }
 
-/* File pill */
-.file-pill {
-    display: inline-flex;
-    align-items: center;
-    background: #0f1729;
-    border: 1px solid #1a3a6a;
-    color: #4d9fff;
-    border-radius: 999px;
-    padding: 0.25rem 0.85rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin: 0.25rem 0.25rem 0 0;
+/* FILE LIST */
+section[data-testid="stSidebar"] .element-container {
+    font-size: 0.85rem;
+    color: #9ca3af;
 }
 
-/* Chat messages */
-[data-testid="stChatMessageContent"] {
-    font-size: 0.93rem;
-    line-height: 1.7;
+/* CHAT HEADER */
+.chat-header {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #1f2937;
+    position: sticky;
+    top: 0;
+    background-color: #0b0f19;
+    z-index: 10;
 }
 
-/* Alerts */
-.stAlert {
-    border-radius: 8px !important;
-    font-size: 0.86rem !important;
+/* CHAT MESSAGES */
+[data-testid="stChatMessage"] {
+    padding: 0.2rem 2rem;
 }
 
-/* Divider */
-hr {
-    border: none;
-    border-top: 1px solid #1a2a4a;
-    margin: 1.25rem 0;
+/* USER MESSAGE */
+[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageContent"]) {
+    border-radius: 12px;
 }
 
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
+/* INPUT */
+[data-testid="stChatInput"] {
+    border-top: 1px solid #1f2937;
+    padding: 1rem;
 }
 
-.empty-state-icon {
-    font-size: 2.2rem;
-    margin-bottom: 0.75rem;
+textarea {
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+    border: 1px solid #1f2937 !important;
+    border-radius: 10px !important;
 }
 
-.empty-state-text {
-    font-size: 0.9rem;
-    color: #4a6080;
+/* SCROLLBAR */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1f2937;
+    border-radius: 10px;
 }
