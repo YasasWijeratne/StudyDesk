@@ -25,9 +25,14 @@ def load_css(path: str):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
+def safe_error(message: str = "Something went wrong. Please try again."):
+    st.error(message)
+
+
 load_css("assets/style.css")
 
 
+# 
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -75,10 +80,12 @@ with st.sidebar:
         if safe_name not in st.session_state.uploaded_files:
             file_bytes = uploaded_file.read()
 
-            with st.spinner("Processing..."):
+            with st.spinner("Processing document..."):
                 success, result = parse_file(safe_name, file_bytes)
 
-                if success:
+                if not success:
+                    safe_error(result)
+                else:
                     try:
                         chunks = chunk_text(result)
                         embeddings = embed_chunks(chunks)
@@ -92,17 +99,17 @@ with st.sidebar:
 
                         st.session_state.uploaded_files.append(safe_name)
 
-                        st.success("Indexed file")
+                        st.success("File indexed successfully")
 
+                    except ValueError:
+                        safe_error("Failed to process document.")
                     except Exception:
-                        st.error("Failed to process file")
-                else:
-                    st.error(result)
+                        safe_error("Unexpected error during indexing.")
 
     st.divider()
 
     if st.session_state.uploaded_files:
-        st.markdown("### Uploaded")
+        st.markdown("### Uploaded Files")
         for f in st.session_state.uploaded_files:
             st.markdown(f" {f}")
 
@@ -127,7 +134,7 @@ query = st.chat_input("Ask something about your documents...")
 
 if query:
     if not st.session_state.uploaded_files:
-        st.warning("Upload a document first.")
+        st.warning("Please upload a document first.")
     else:
         st.session_state.messages.append(
             {"role": "user", "content": query}
@@ -144,16 +151,20 @@ if query:
                 )
 
                 if not chunks:
-                    response = "I couldn't find anything relevant in your documents."
+                    response = "I couldn't find relevant information in your documents."
                     st.markdown(response)
                 else:
                     response = st.write_stream(
                         generate_answer(query, chunks)
                     )
 
+            except ValueError:
+                response = "Something went wrong while processing your request."
+                safe_error(response)
+
             except Exception:
-                response = "Something went wrong while generating the answer."
-                st.error(response)
+                response = "Unexpected error occurred. Please try again."
+                safe_error(response)
 
         st.session_state.messages.append(
             {"role": "assistant", "content": response}
