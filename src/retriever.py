@@ -1,5 +1,6 @@
 from src.embedder import embed_query
 
+
 def retrieve_chunks(collection, query: str, top_k: int = 4) -> list[dict]:
     query_embedding = embed_query(query)
 

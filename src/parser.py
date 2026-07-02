@@ -1,49 +1,62 @@
 import fitz
 import os
+import re
 
-ALLOWED_EXTENSIONS = {".pdf", ".txt"}
+ALLOWED_EXTENSIONS = {".pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
+PDF_HEADER = b"%PDF"
 
-def validate_file(file_name: str, file_size: int) -> tuple[bool, str]:
-    ext = os.path.splitext(file_name)[1].lower()
+
+def sanitize_filename(filename: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9._-]", "", filename)
+
+
+def validate_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
+    ext = os.path.splitext(filename)[1].lower()
+
+    if len(file_bytes) > MAX_FILE_SIZE:
+        return False, "File exceeds the 10MB limit."
 
     if ext not in ALLOWED_EXTENSIONS:
-        return False, f"File type not allowed. Please upload a PDF or TXT file."
+        return False, "Only PDF files are allowed."
 
-    if file_size > MAX_FILE_SIZE:
-        return False, f"File too large. Maximum size is 10MB."
+    if not file_bytes.startswith(PDF_HEADER):
+        return False, "Only valid PDF files are allowed."
 
     return True, "ok"
 
 
 def parse_pdf(file_bytes: bytes) -> str:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
-    full_text = ""
+    pages = []
 
     for page in doc:
-        full_text += page.get_text()
+        text = page.get_text().strip()
+        if text:
+            pages.append(text)
 
     doc.close()
-    return full_text.strip()
+    return "\n\n".join(pages).strip()
 
 
-def parse_txt(file_bytes: bytes) -> str:
-    return file_bytes.decode("utf-8").strip()
+def parse_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
+    safe_name = sanitize_filename(filename)
 
-
-def parse_file(file_name: str, file_bytes: bytes) -> tuple[bool, str]:
-    is_valid, message = validate_file(file_name, len(file_bytes))
+    is_valid, message = validate_file(safe_name, file_bytes)
     if not is_valid:
         return False, message
 
-    ext = os.path.splitext(file_name)[1].lower()
-
-    if ext == ".pdf":
+    try:
         text = parse_pdf(file_bytes)
-    elif ext == ".txt":
-        text = parse_txt(file_bytes)
+    except Exception as error:
+        print(f"PDF parsing error: {error}")
+        return False, "Unable to process this file."
 
     if not text:
-        return False, "Could not extract any text from this file. It may be a scanned image PDF."
+        return False, "No text could be extracted. The PDF may be image-only."
 
     return True, text
+
+
+def get_safe_filename(filename: str) -> str:
+    return sanitize_filename(filename)
