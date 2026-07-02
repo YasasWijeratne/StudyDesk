@@ -1,8 +1,11 @@
-import google.generativeai as genai
 import os
+import logging
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
@@ -34,11 +37,14 @@ ANSWER:"""
 
 def generate_answer(query: str, chunks: list[dict]):
     prompt = build_prompt(query, chunks)
+
     try:
         response = model.generate_content(prompt, stream=True)
+
         for chunk in response:
             if chunk.text:
                 yield chunk.text
-    except Exception as error:
-        print(f"Generation error: {error}")
+
+    except Exception:
+        logger.exception("Generation error")
         raise ValueError("Unable to generate an answer at this time.")

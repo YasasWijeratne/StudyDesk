@@ -10,7 +10,11 @@ def retrieve_chunks(collection, query: str, top_k: int = 4) -> list[dict]:
         include=["documents", "metadatas", "distances"]
     )
 
+    if not results["documents"] or not results["documents"][0]:
+        return []
+
     chunks = []
+
     for doc, meta, dist in zip(
         results["documents"][0],
         results["metadatas"][0],

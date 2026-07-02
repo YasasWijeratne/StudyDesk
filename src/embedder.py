@@ -1,5 +1,5 @@
-import google.generativeai as genai
 import os
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,18 +12,33 @@ genai.configure(api_key=api_key)
 
 
 def embed_chunks(chunks: list[str]) -> list[list[float]]:
-    result = genai.embed_content(
-        model="models/gemini-embedding-001",
-        content=chunks,
-        task_type="retrieval_document"
-    )
-    return result["embedding"]
+    try:
+        result = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=chunks,
+            task_type="retrieval_document"
+        )
+
+        embeddings = result["embedding"]
+
+        if len(embeddings) != len(chunks):
+            raise ValueError("Embedding count does not match chunk count.")
+
+        return embeddings
+
+    except Exception as error:
+        raise ValueError("Failed to generate document embeddings.") from error
 
 
 def embed_query(query: str) -> list[float]:
-    result = genai.embed_content(
-        model="models/gemini-embedding-001",
-        content=query,
-        task_type="retrieval_query"
-    )
-    return result["embedding"]
+    try:
+        result = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=query,
+            task_type="retrieval_query"
+        )
+
+        return result["embedding"]
+
+    except Exception as error:
+        raise ValueError("Failed to generate query embedding.") from error

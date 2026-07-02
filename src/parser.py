@@ -1,6 +1,9 @@
-import fitz
 import os
 import re
+import logging
+import fitz
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -28,15 +31,19 @@ def validate_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
 
 def parse_pdf(file_bytes: bytes) -> str:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
-    pages = []
 
-    for page in doc:
-        text = page.get_text().strip()
-        if text:
-            pages.append(text)
+    try:
+        pages = []
 
-    doc.close()
-    return "\n\n".join(pages).strip()
+        for page in doc:
+            text = page.get_text().strip()
+            if text:
+                pages.append(text)
+
+        return "\n\n".join(pages).strip()
+
+    finally:
+        doc.close()
 
 
 def parse_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
@@ -48,12 +55,15 @@ def parse_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
 
     try:
         text = parse_pdf(file_bytes)
-    except Exception as error:
-        print(f"PDF parsing error: {error}")
+    except Exception:
+        logger.exception("PDF parsing failed")
         return False, "Unable to process this file."
 
     if not text:
-        return False, "No text could be extracted. The PDF may be image-only."
+        return (
+            False,
+            "No text could be extracted. The PDF may be image-only."
+        )
 
     return True, text
 
