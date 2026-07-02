@@ -10,7 +10,7 @@ def retrieve_chunks(collection, query: str, top_k: int = 4) -> list[dict]:
         include=["documents", "metadatas", "distances"]
     )
 
-    if not results["documents"] or not results["documents"][0]:
+    if not results.get("documents") or not results["documents"][0]:
         return []
 
     chunks = []
@@ -20,10 +20,13 @@ def retrieve_chunks(collection, query: str, top_k: int = 4) -> list[dict]:
         results["metadatas"][0],
         results["distances"][0]
     ):
+        if not meta:
+            continue
+
         chunks.append({
             "text": doc,
-            "source": meta["source"],
-            "chunk_index": meta["chunk_index"],
+            "source": meta.get("source", "unknown"),
+            "chunk_index": meta.get("chunk_index", -1),
             "similarity": round(1 - dist, 3)
         })
 

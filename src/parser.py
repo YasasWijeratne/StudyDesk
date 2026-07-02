@@ -60,10 +60,7 @@ def parse_file(filename: str, file_bytes: bytes) -> tuple[bool, str]:
         return False, "Unable to process this file."
 
     if not text:
-        return (
-            False,
-            "No text could be extracted. The PDF may be image-only."
-        )
+        return False, "No extractable text found in the PDF."
 
     return True, text
 

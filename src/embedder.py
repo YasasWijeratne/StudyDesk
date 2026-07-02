@@ -6,7 +6,7 @@ load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise ValueError("GEMINI_API_KEY not found. Check your .env file.")
+    raise ValueError("GEMINI_API_KEY not found.")
 
 genai.configure(api_key=api_key)
 
@@ -22,12 +22,12 @@ def embed_chunks(chunks: list[str]) -> list[list[float]]:
         embeddings = result["embedding"]
 
         if len(embeddings) != len(chunks):
-            raise ValueError("Embedding count does not match chunk count.")
+            raise ValueError("Embedding mismatch.")
 
         return embeddings
 
-    except Exception as error:
-        raise ValueError("Failed to generate document embeddings.") from error
+    except Exception:
+        raise ValueError("Failed to generate embeddings.")
 
 
 def embed_query(query: str) -> list[float]:
@@ -37,8 +37,7 @@ def embed_query(query: str) -> list[float]:
             content=query,
             task_type="retrieval_query"
         )
-
         return result["embedding"]
 
-    except Exception as error:
-        raise ValueError("Failed to generate query embedding.") from error
+    except Exception:
+        raise ValueError("Failed to generate query embedding.")
